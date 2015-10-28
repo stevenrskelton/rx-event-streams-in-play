@@ -1,0 +1,155 @@
+@()
+
+@main("Welcome to Play") {
+
+    <script src="@routes.Assets.versioned("javascripts/webcomponentsjs/webcomponents.js")" type="text/javascript"></script>
+    <link rel="import" href="@routes.Assets.versioned("javascripts/polymer/polymer.html")">
+
+    <div id="content"></div>
+
+    <script type="text/babel">
+        var CommentBox = React.createClass({
+            displayName: 'CommentBox',
+            loadData: function(data) {
+                this.setState(data);
+            },
+            getInitialState: function() {
+                return {data: []};
+            },
+            componentDidMount: function() {
+                this.setState({data: "wat"});
+            },
+            render: function() {
+                return (
+<section>
+    <a href="/account" aria-label="Change your avatar" className="vcard-avatar tooltipped tooltipped-s"><img alt="" className="avatar" src={this.props.avatarUrl} height="230" width="230" /></a>
+
+    <h1 className="vcard-names">
+        <span className="vcard-fullname" itemProp="name">{this.props.name}</span>
+        <span className="vcard-username" itemProp="additionalName">{this.props.username}</span>
+    </h1>
+
+
+
+    <ul className="vcard-details">
+        <li className="vcard-detail" itemProp="homeLocation" title={this.props.location}><span className="octicon octicon-location"></span>{this.props.location}</li>
+        <li className="vcard-detail" itemProp="url"><span className="octicon octicon-link"></span><a href={this.props.blog} className="url" rel="nofollow me">{this.props.blog}</a></li>
+        <li className="vcard-detail"><span className="octicon octicon-clock"></span><span className="join-label">Joined on </span><time title="May 15, 2013, 10:49 AM EDT" className="join-date" datetime="2013-05-15T14:49:53Z" day="numeric" is="local-time" month="short" year="numeric">May 15, 2013</time></li>
+    </ul>
+
+
+    <div className="vcard-stats">
+      <a className="vcard-stat" href="/stevenrskelton/followers">
+        <strong className="vcard-stat-count">{this.props.followers}</strong>
+        <span className="text-muted">Followers</span>
+        </a>
+        <a className="vcard-stat" href="/stars">
+            <strong className="vcard-stat-count">10</strong>
+            <span className="text-muted">Starred</span>
+        </a>
+        <a className="vcard-stat" href="/stevenrskelton/following">
+            <strong className="vcard-stat-count">{this.props.following}</strong>
+            <span className="text-muted">Following</span>
+        </a>
+    </div>
+</section>
+
+                );
+            }
+        });
+
+        var CommentBox2 = React.createClass({
+            displayName: 'CommentBox2',
+                loadData: function(data) {
+                this.setState(data);
+            },
+            getInitialState: function() {
+                return {data: []};
+            },
+            componentDidMount: function() {
+                this.setState({data: "wat"});
+            },
+            render: function() {
+
+                var li = this.props.persons.map(function(user) { return (
+
+                    <li key={user.id} className="network-user">
+                        <div className="css-truncate">
+
+                            <a href={'?username=' + user.username}><img alt={'@@a' + user.username} className="gravatar" src={user.avatarUrl} height="96" width="96"/></a>
+                            <div className="follow-list-container">
+                                <h3 className="follow-list-name"><span className="css-truncate css-truncate-target" title={user.name}><a href={'?username=' + user.username}>{user.name}</a></span></h3>
+                                <p className="follow-list-info"><span className="octicon octicon-organization"></span> <span className="css-truncate css-truncate-target" title={'Works for ' + user.company}>{user.company}</span></p>
+                                <p className="follow-list-info"><span className="octicon octicon-location"></span> <span className="css-truncate css-truncate-target" title={user.location}>{user.location}</span></p>
+
+                                <span className="user-following-container js-toggler-container js-social-container ">
+                                </span>
+
+                            </div>
+                        </div>
+                    </li>
+
+                )});
+
+                console.log(li);
+
+                return (
+
+<ul className="boxed-group-inner mini-repo-list follow-list clearfix">
+    {li}
+</ul>
+
+                );
+            }
+        });
+
+        //<ol className="follow-list clearfix">
+        //    <li className="follow-list-item">
+        //    </li>
+        //</ol>
+
+        //<CommentBox username={cow.username} />,
+        ReactDOM.render(
+            React.createElement(CommentBox, {}),
+            document.getElementById('person')
+        );
+
+        var personList = { persons: [] };
+
+        ReactDOM.render(
+            React.createElement(CommentBox2, personList),
+            document.getElementById('personList')
+        );
+
+        var subscription = jsonpipe.observable.subscribe(
+            function (x) {
+                console.log(x);
+                switch (x.event) {
+                    case 'user':
+                        ReactDOM.render(
+                            React.createElement(CommentBox, x.data),
+                            document.getElementById('person')
+                        );
+                        break;
+                    case 'user-network':
+                        personList.persons.push(x.data);
+                        ReactDOM.render(
+                            React.createElement(CommentBox2, personList),
+                            document.getElementById('personList')
+                        );
+                        break;
+                    default:
+                        console.log('Unhandled event: ' + x.event);
+                }
+            },
+            function (err) {
+                console.log('Error:');
+                console.log(err);
+            },
+            function () {
+                console.log('Completed');
+            });
+
+    </script>
+
+}

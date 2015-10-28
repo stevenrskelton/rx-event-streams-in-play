@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>ReactiveX Event Streams in Play</title>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/normalize.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/octicons/octicons.css")">
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                font-family: proxima-nova,"Helvetica Neue",Helvetica,Roboto,Arial,sans-serif;
+                color: #484848;
+                line-height: 1.28;
+            }
+            a {
+                text-decoration: none;
+            }
+            h2 {
+                margin-top: 2em;
+                margin-bottom: 1em;
+            }
+            .wrap {
+                width: 960px;
+                margin-left: auto;
+                margin-right: auto;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+            .buttons-unit {
+                text-align: center;
+            }
+            .button {
+                width: 200px;
+                font-size: 28px;
+                background: #CC7A6F none repeat scroll 0% 0%;
+                border-radius: 4px;
+                padding: 8px 16px;
+                font-weight: 400;
+                margin: 0px 12px;
+                display: inline-block;
+                color: #FAFAFA;
+                box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.2);
+                text-decoration: none;
+                line-height: 50px;
+            }
+            .button img {
+                vertical-align: middle;
+                padding-right: 4px;
+            }
+            .helper {
+                display: inline-block;
+                height: 100%;
+                vertical-align: middle;
+            }
+            .example {
+                border: solid 1px #CC7A6F;
+                border-radius: 4px;
+                padding: 8px;
+                margin-bottom: 28px;
+            }
+            .diagram {
+                width: 90%;
+                margin: 15px auto;
+                display: block;
+            }
+            .procon {
+                width: 75%;
+                margin: 0 auto;
+                display:block;
+            }
+            .procon td {
+                width: 50%;
+                padding: 10px;
+                vertical-align: top;
+                font-size: large;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <h1 style="font-size: 48px;margin-bottom:36px;">
+                <img style="vertical-align:text-top" alt="ReactiveX" height="72" src="@routes.Assets.versioned("images/Rx_Logo_M.png")">
+                ReactiveX Event Streams in Play
+            </h1>
+
+            <h2>Lower latency page requests using chunked responses</h2>
+
+            <p>
+                HTTP 1.1 added support for chunked transfer encoding; this allows a server to start transmitting a response without knowing its full length or content.<br>
+                The goal is to get data to the client as fast as possible creating a faster user experience.
+            </p>
+            <p>
+                This works well for HTML since it is parsed linearly by browsers, <em>but not so well for JSON</em>.
+            </p>
+
+            <h2>Chunked JSON responses</h2>
+
+            <p>
+                Some JSON fields may take longer to compute than others, so how can partial data be sent to the client?<br>
+                This can be done by chunking JSON into a stream of events, where instead rendering it as a whole rendering is done as data is observed.
+            </p>
+
+            <p>
+                A similiar mechanism are <a href="https://en.wikipedia.org/wiki/Server-sent_events" title="SSE" target="_blank">Server-sent events (SSE)</a>,
+                but unlike SSE a chunked JSON response has definite size.
+            </p>
+
+            <h3>Example:</h3>
+
+            <h4>application/json</h4>
+
+<pre class="example"><code>{
+    "username": "stevenrskelton",
+    "location": "Toronto, Canada",
+    "blog": "http://stevenskelton.ca",
+    "githubRepos": [
+        {
+            "name": "sortable-table",
+            "html_url": "https://github.com/stevenrskelton/sortable-table"
+        },
+        {
+            "name": "flag-icon",
+            "html_url": "https://github.com/stevenrskelton/flag-icon"
+        }
+    ]
+}
+</code></pre>
+
+            <h4>text/event-stream</h4>
+
+<pre class="example"><code>event: user
+data: { username: "stevenrskelton", location: "Toronto, Canada", blog: "http://stevenskelton.ca" }
+
+event: githubRepo
+data: { "name": "sortable-table", "html_url": "https://github.com/stevenrskelton/sortable-table" }
+
+event: githubRepo
+data: { "name": "flag-icon", "html_url": "https://github.com/stevenrskelton/flag-icon" }
+</code></pre>
+
+            <h2>Event-Based UIs</h2>
+
+            <p>
+                Because streaming data as events will cause constant updates and refreshs to the DOM, it is important to choose
+                a framework which can do this both as efficiently as possible and with minimal extra coding:
+            </p>
+
+            <div class="buttons-unit">
+                <a href="/polymer#stevenrskelton" alt="Polymer based UI" class="button"><img alt="Polymer" height="36" src="@routes.Assets.versioned("images/polymer.svg")"><span class="helper">Polymer</span></a>
+                <a href="/react#stevenrskelton" alt="React based UI" class="button"><img alt="React" height="36" src="@routes.Assets.versioned("images/react.svg")"><span class="helper">React</span></a>
+            </div>
+
+            <h2>Frequently Asked Questions</h2>
+
+            <ul>
+                <li>
+                    <h3>What problem does this solve?</h3>
+                    <section>
+                        A chunked response sends data to the browser as soon as there are database/service responses.
+                        <br>
+                        <img alt="Chunked Response" class="diagram" src="@routes.Assets.versioned("images/chunked.svg")">
+                        <br>
+                        If data isn't chunked, than there are two choices.
+                        The first choice is to buffer the response until all data from the DB services has returned.
+                        <br>
+                        <table class="procon">
+                            <tr>
+                                <td>
+                                    <h4>Pros:</h4>
+                                    <ul>
+                                        <li>Full page render still takes the same amount of time</li>
+                                        <li>Simplicity, no extra logic (JS or ReactiveX libraries)</li>
+                                    </ul>
+                                </td>
+                                <td>
+                                    <h4>Cons:</h4>
+                                    <ul>
+                                        <li>Page isn't as responsive to the user until all data returned</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+                        <br>
+                        <img alt="Non-Chunked Response" class="diagram" src="@routes.Assets.versioned("images/json.svg")">
+                        <br>
+                        The second choice when data isn't chunked is to manually chunk it into two or more AJAX calls.
+                        <br>
+                        <table class="procon">
+                            <tr>
+                                <td>
+                                    <h4>Pros:</h4>
+                                    <ul>
+                                        <li>Page is just as responsive as when chunking events</li>
+                                    </ul>
+                                </td>
+                                <td>
+                                    <h4>Cons:</h4>
+                                    <ul>
+                                        <li>Full page load takes longer</li>
+                                        <li>Many separate service calls</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+                        <br>
+                        <img alt="FE Logic" class="diagram" src="@routes.Assets.versioned("images/fe-logic.svg")">
+                    </section>
+                </li>
+                <li>
+                    <h3>Do web browsers support this?</h3>
+                    <p>
+                        Yes, browser support is not an issue. Chunked transfer encoding was part of HTTP 1.1, so has been a web standard since 1997.
+                        All general browsers and servers support the specification, but some software such as the Nginx reverse-proxy do not enable it by default.
+                    </p>
+                    <p>
+                        The fallback method when HTTP 1.0 cannot be negotiated is to buffer the entire response instead of incrementally transferring it.
+                        This will always be fully supported, however the time to first byte will be determined by the slowest event rather than the quickest.
+                    </p>
+                </li>
+                <li>
+                    <h3>Isn't this an event-stream like server-sent events, Comet, or web sockets?</h3>
+                    <p>
+                        While the <code>text/event-stream</code> format is the same as server-sent events, the goal is different.
+                        These technologies are designed to handle multiple separate requests, over a long period of time.
+                        They also designed to allow the server to push unrequested data to the client.
+                    </p>
+                    <p>
+                        Chunked responses are not meant for this purpose.  It is simply a mechanism to get the same data to the browser, quicker.
+                        Each response corresponds to a single request, and the connection is freed after all data for that reques has been transfered.
+                        Any use-case for long-duration responses, or continuous streams of events should still use one of the other technologies suited for that purpose.
+                    </p>
+                </li>
+            </ul>
+
+            <h2>Resources</h2>
+
+            <ul>
+                <li>
+                    <a href="http://reactivex.io/" target="_blank">ReactiveX</a> An API for asynchronous programming with observable streams
+                    <ul>
+                        <li>
+                            <a href="https://github.com/Reactive-Extensions/RxJS" target="_blank">RxJS</a>
+                        </li>
+                        <li>
+                            <a href="http://reactivex.io/rxscala/" target="_blank">RxScala</a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="https://www.polymer-project.org" target="_blank">Polymer</a> is designed to make it easier and faster to make custom elements that work like standard DOM elements.
+                </li>
+                <li>
+                    <a href="https://facebook.github.io/react/" target="_blank">React</a> A declarative, efficient, and flexible JavaScript library for building user interfaces.
+                </li>
+            </ul>
+
+            <p style="color:darkgray;margin-top:50px;margin-bottom:20px;">
+                The content of this page is licensed under Creative Commons Attribution 3.0 License, and code samples are licensed under the Apache 2 license.
+            </p>
+        </div>
+    </body>
+</html>

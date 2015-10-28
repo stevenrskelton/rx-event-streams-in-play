@@ -1,0 +1,68 @@
+@(title: String)(content: Html)
+
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>@title</title>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/normalize.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/octicons/octicons.css")">
+        <script src="@routes.Assets.versioned("javascripts/rxjs/rx.core.js")" type="text/javascript"></script>
+        <script src="@routes.Assets.versioned("javascripts/jsonpipe/jsonpipe.js")" type="text/javascript"></script>
+    </head>
+    <body>
+        <script>
+            jsonpipe.observable = Rx.Observable.create(function (observer) {
+
+                var username = window.location.hash.substring(1);
+                jsonpipe.flow('/github-user?username=' + username, {
+                    "delimiter": "\n\n", // String. The delimiter separating valid JSON objects; default is "\n\n"
+                    "success": function(data) {
+                        observer.onNext(data);
+                    },
+                    "error": function(errorMsg) {
+                        observer.onError(new Error(errorMsg));
+                    },
+                    "complete": function(statusText) {
+                        observer.onCompleted(statusText);
+                    },
+                    "timeout": 30000, // Number. Set a timeout (in milliseconds) for the request
+                    "method": "GET", // String. The type of request to make (e.g. "POST", "GET", "PUT"); default is "GET"
+                    "headers": { // Object. An object of additional header key/value pairs to send along with request
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    "data": "" // String. A serialized string to be sent in a POST/PUT request
+                });
+
+                 return function () {
+                    console.log('disposed');
+                };
+            });
+        </script>
+        <div class="page-content container">
+            <div class="columns profilecols">
+                <div class="column one-fourth vcard" itemScope="" itemType="http://schema.org/Person" id="person">
+                </div>
+                <div class="column three-fourths">
+                    <div class="contributions-tab">
+
+                        <div class="columns popular-repos">
+                            <div class="single-column">
+
+                                <div class="boxed-group flush">
+                                    <h3>Github Network</h3>
+                                    <section id="personList"></section>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        @content
+    </body>
+</html>
